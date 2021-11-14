@@ -1,0 +1,30 @@
+services:
+    web:
+        build: .
+        image: lms-demo
+        ports:
+            - "80:8088"
+        environment:
+            - PYTHONUNBUFFERED=1
+            - PG_INIT_DB=postgresql://postgres:abc123@db/postgres
+            - LMS_DB_NAME=lmsdemo
+            - LMS_PG_ADMIN=lmsadmin
+            - INIT_DB_PASSWORD=zyx987
+            - YENOT_AUTH_SIGNING_SECRET=oi2ho2ntl2nt2l3n2li
+            - LMS_ADMIN_DB=postgresql://lmsadmin:very-secret-123@db/lmsdemo
+            - LMS_PROD_DB=postgresql://lmsserver:secret123@db/lmsdemo
+        volumes:
+            - ./yenot-auth:/lms/yenot-auth
+    db:
+        build: postgresql
+        image: pg-lms-demo
+        environment:
+            - POSTGRES_PASSWORD=abc123
+    tests:
+        build: tests
+        image: lms-test-suite
+        environment:
+            - PYTHONUNBUFFERED=1
+            - INIT_ADMIN_USER=admin
+            - INIT_ADMIN_PASSWORD=zyx987
+            - LMS_URL=http://web:8088
