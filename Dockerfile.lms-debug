@@ -1,37 +1,12 @@
 FROM python:3.10 as intermediate
-RUN apt-get update
-RUN apt-get install -y git
-
-# NOTE:  for docker-build, we pull from git, but the expectation is that the
-# git clone directories each get over mounted in the docker run.
-
-# add credentials on build
-ARG SSH_PRIVATE_KEY
-RUN mkdir /root/.ssh/
-RUN echo "${SSH_PRIVATE_KEY}" > /root/.ssh/id_rsa
-RUN chmod 600 /root/.ssh/id_rsa
-
-# make sure your domain is accepted
-RUN touch /root/.ssh/known_hosts
-RUN ssh-keyscan github.com >> /root/.ssh/known_hosts
-
-# cache bust the git clone
-ARG CACHE_BUST
-RUN echo ${CACHE_BUST}
 
 WORKDIR /lms
-RUN git clone --depth 1 git@github.com:jbmohler/yenot.git && \
-	rm -rf yenot/.git
-RUN git clone git@github.com:jbmohler/yenot-auth.git && \
-	rm -rf yenot-auth/.git
-RUN git clone git@github.com:jbmohler/yenot-html.git && \
-	rm -rf yenot-html/.git
-RUN git clone git@github.com:jbmohler/yenot-lmshacc.git && \
-	rm -rf yenot-lmshacc/.git
-RUN git clone git@github.com:jbmohler/yenot-lmscontacts.git && \
-	rm -rf yenot-lmscontacts/.git
-RUN git clone git@github.com:jbmohler/yenot-lmsdatabits.git && \
-	rm -rf yenot-lmsdatabits/.git
+COPY yenot yenot
+COPY yenot-auth yenot-auth
+COPY yenot-html yenot-html
+COPY yenot-lmshacc yenot-lmshacc
+COPY yenot-lmscontacts yenot-lmscontacts
+COPY yenot-lmsdatabits yenot-lmsdatabits
 
 FROM python:3.10
 
