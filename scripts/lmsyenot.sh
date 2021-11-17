@@ -1,16 +1,21 @@
 #!/bin/sh
 
+set -e
+
 if [ ! -z "$LMS_ADMIN_DB" ]; then
-	sleep 5
+	# Req'd connection string env vars:
+	# * PG_INIT_DB: postgres superuser connection string to default db
+	# * LMS_ADMIN_DB: lms administrative connection string
+	# * LMS_PROD_DB: lms lowered privilege server connection string
 
-	# Req'd env vars:
-	# LMS_ADMIN_DB, PG_INIT_DB, LMS_DB_NAME, LMS_PG_ADMIN, INIT_DB_PASSWORD
+	# TODO iterate in init-new-database.py to await server coming up
+	sleep 3
 
-	if [ ! -z "$PG_INIT_DB" ]; then
-		python /lms/runsql.py $PG_INIT_DB --file /lms/create-users.sql
-		python /lms/runsql.py $PG_INIT_DB --sql "CREATE DATABASE $LMS_DB_NAME OWNER $LMS_PG_ADMIN"
-	fi
-	python /lms/runsql.py $LMS_ADMIN_DB --file /lms/prepare-database.sql
+	python /lms/init-new-database.py \
+		--pg-superuser=$PG_INIT_DB \
+		--lms-admin=$LMS_ADMIN_DB \
+		--lms-server=$LMS_PROD_DB
+
 	echo "User password of " $INIT_DB_PASSWORD
 	. /lms/init-database.sh
 fi

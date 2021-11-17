@@ -7,11 +7,9 @@ services:
         environment:
             - PYTHONUNBUFFERED=1
             - PG_INIT_DB=postgresql://postgres:abc123@db/postgres
-            - LMS_DB_NAME=lmsdemo
-            - LMS_PG_ADMIN=lmsadmin
+            - LMS_ADMIN_DB=postgresql://lmsadmin:very-secret-123@db/lmsdemo
             - INIT_DB_PASSWORD=zyx987
             - YENOT_AUTH_SIGNING_SECRET=oi2ho2ntl2nt2l3n2li
-            - LMS_ADMIN_DB=postgresql://lmsadmin:very-secret-123@db/lmsdemo
             - LMS_PROD_DB=postgresql://lmsserver:secret123@db/lmsdemo
         volumes:
             - ./yenot-auth:/lms/yenot-auth

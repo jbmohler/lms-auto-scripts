@@ -24,9 +24,7 @@ RUN pip install -e /lms/yenot-lmscontacts
 RUN pip install -e /lms/yenot-lmsdatabits
 
 COPY scripts/lmsyenot.sh /lms
-COPY scripts/runsql.py /lms
-COPY scripts/create-users.sql /lms
-COPY scripts/prepare-database.sql /lms
+COPY scripts/init-new-database.py /lms
 COPY scripts/init-database.sh /lms
 
 EXPOSE 8088
