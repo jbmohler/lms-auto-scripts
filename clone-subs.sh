@@ -5,3 +5,4 @@ git clone git@github.com:jbmohler/yenot-lmsdatabits.git
 git clone git@github.com:jbmohler/yenot-lmscontacts.git
 git clone git@github.com:jbmohler/yenot-lmshacc.git
 git clone git@github.com:jbmohler/yenot-html.git
+git clone git@github.com:jbmohler/mecolm.git
