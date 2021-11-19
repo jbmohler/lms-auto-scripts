@@ -67,7 +67,7 @@ def main(args):
 
     configs = [sucfg, admcfg, srvcfg]
 
-    if len(set((c["host"], c["port"]) for c in configs)) != 1:
+    if len(set((c["host"], c.get("port")) for c in configs)) != 1:
         raise RuntimeError("All 3 connect strings must point to the same server")
 
     if len(set(c["user"] for c in configs)) != 3:
