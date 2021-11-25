@@ -11,3 +11,4 @@ docker-compose exec tests python /tests/integration_tests.py trans.create_accoun
 # do some contacts
 docker-compose exec tests python /tests/integration_tests.py contacts.create_corp_entity
 docker-compose exec tests python /tests/integration_tests.py contacts.create_personal_entity
+docker-compose exec tests python /tests/integration_tests.py contacts.add_random_contact_bits

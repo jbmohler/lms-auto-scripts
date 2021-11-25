@@ -40,6 +40,46 @@ def create_personal_entity(client, fake):
     print(f"Added personal entity {name}")
 
 
+def add_random_contact_bits(client, fake):
+    payload = client.get("/api/personas/list")
+    personas = payload.main_table()
+
+    corporate_types = ["email_addresses", "urls", "phone_numbers", "street_addresses"]
+    personal_types = ["email_addresses", "phone_numbers", "street_addresses"]
+
+    for _ in range(30):
+        persona = random.choice(personas.rows)
+
+        btlist = corporate_types if persona.corporate_entity else personal_types
+        bt = random.choice(btlist)
+        payload = client.get(f"/api/persona/{persona.id}/bit/new", bit_type=bt)
+        bits = payload.main_table()
+        row = bits.rows[0]
+
+        row.name = "thing"
+        if bt == "email_addresses":
+            row.email = fake.ascii_email()
+        elif bt == "phone_numbers":
+            # row.number = fake.phone_number()
+            row.number = "717-298-2911"
+        elif bt == "urls":
+            row.url = fake.uri()
+            row.password = fake.password()
+        elif bt == "street_addresses":
+            row.address1 = fake.street_address()
+            row.city = fake.city()
+            row.state = fake.state()
+            row.zip = fake.postcode()
+            row.country = "USA"
+        if random.random() < 0.1:
+            row.memo = fake.text()
+
+        client.put(
+            f"/api/persona/{persona.id}/bit/{row.id}",
+            files={"bit": bits.as_http_post_file()},
+        )
+
+
 def main():
     pass
 

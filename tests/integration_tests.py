@@ -76,6 +76,7 @@ if __name__ == "__main__":
     c = subparsers.add_parser("trans.create_accounts")
     c = subparsers.add_parser("contacts.create_corp_entity")
     c = subparsers.add_parser("contacts.create_personal_entity")
+    c = subparsers.add_parser("contacts.add_random_contact_bits")
 
     args = parser.parse_args()
 
