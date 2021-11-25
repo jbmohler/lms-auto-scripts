@@ -40,6 +40,26 @@ def create_personal_entity(client, fake):
     print(f"Added personal entity {name}")
 
 
+def add_random_contact_bits(client, fake):
+    payload = client.get("/api/personas/list")
+    personas = payload.main_table()
+
+    corporate_types = ['email', 'url', 'phone', 'street_addresses']
+    personal_types = ['email', 'phone', 'street_addresses']
+
+    for _ in range(30):
+        persona = random.choice(personas.rows)
+
+        btlist = corporate_types if persona.corporate_entity else personal_types
+        bt = random.choice(btlist)
+        payload = client.get(f"/api/persona/{persona.id}/bit/new", bit_type=bt)
+        bits = payload.main_table()
+        row = bits.rows[0]
+
+        # TODO fill out bit by type
+
+        client.put(f"/api/persona/{persona.id}/bit/{row.id}", files={"bits": bits.as_http_post_file()})
+
 def main():
     pass
 
