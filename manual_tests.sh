@@ -8,6 +8,10 @@ docker-compose exec tests python /tests/integration_tests.py createuser --name="
 docker-compose exec tests python /tests/integration_tests.py trans.create_account_types
 docker-compose exec tests python /tests/integration_tests.py trans.create_accounts
 docker-compose exec tests python /tests/integration_tests.py trans.create_initial_balances
+docker-compose exec tests python /tests/integration_tests.py trans.create_biweekly_paycheck
+docker-compose exec tests python /tests/integration_tests.py trans.create_weekly_groceries
+docker-compose exec tests python /tests/integration_tests.py trans.create_monthly_mortgage
+docker-compose exec tests python /tests/integration_tests.py trans.create_random_automotive
 
 # do some contacts
 docker-compose exec tests python /tests/integration_tests.py contacts.create_corp_entity

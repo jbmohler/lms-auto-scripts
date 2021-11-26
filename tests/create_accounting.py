@@ -1,3 +1,4 @@
+import random
 import datetime
 import tools
 
@@ -39,6 +40,7 @@ ACCOUNTS = [
     {"name": "Net Worth", "atype": "Equity"},
     {"name": "Salary Wages", "atype": "Revenue"},
     {"name": "Groceries", "atype": "Expense"},
+    {"name": "Taxes", "atype": "Expense"},
     {"name": "Transportation", "atype": "Expense"},
     {"name": "Interest/Fees", "atype": "Expense"},
 ]
@@ -109,6 +111,21 @@ def _print_balance_sheet(client):
     balances = payload.main_table()
 
     print("*** balance sheet ***")
+    for h in payload.keys['headers']:
+        print(h)
+    balances.rows.sort(key=lambda x: (x.atype_sort, x.acc_name))
+    for row in balances.rows:
+        print(f"{row.atype_name:<20s} {row.acc_name:<20s} {row.balance:9.2f}")
+        # print(f"{row.atype_name:<20s} {row.acc_name:<20s} {row.debit:9.2f} {row.credit:9.2f}")
+
+def _print_p_and_l(client):
+    jan1 = anchor_jan1()
+    payload = client.get("/api/gledger/profit-and-loss", date1=f"{jan1.year}-01-01", date2=f"{jan1.year}-12-31")
+    balances = payload.main_table()
+
+    print("*** profit & loss ***")
+    for h in payload.keys['headers']:
+        print(h)
     balances.rows.sort(key=lambda x: (x.atype_sort, x.acc_name))
     for row in balances.rows:
         print(f"{row.atype_name:<20s} {row.acc_name:<20s} {row.balance:9.2f}")
@@ -152,20 +169,92 @@ def create_initial_balances(client):
 
 
 def create_biweekly_paycheck(client):
-    pass
+    jan1 = anchor_jan1()
+
+    # arbitrarily choose Jan 5
+    first = jan1 + datetime.timedelta(days=4)
+
+    # bank balances
+    for i in range(26):
+        _trans(
+            client,
+            date=first + datetime.timedelta(days=i*14),
+            memo="Paycheck",
+            split_accs={
+                "Salary Wages": -3500,
+                "Taxes": 454.23,
+                "Savings": "balance",
+            },
+        )
 
 
 def create_weekly_groceries(client):
-    pass
+    jan1 = anchor_jan1()
+
+    offsets = random.sample(list(range(365)), 52)
+    for i in offsets:
+        _trans(
+            client,
+            date=jan1+datetime.timedelta(days=i),
+            payee=random.choice(['Giant', 'Aldi']),
+            memo="Groceries",
+            split_accs={
+                "Groceries": round(random.gammavariate(120, 60), 2),
+                "Visa": "balance",
+            },
+        )
 
 
 def create_monthly_mortgage(client):
-    pass
+    jan1 = anchor_jan1()
+
+    for i in range(12):
+        _trans(
+            client,
+            date=datetime.date(jan1.year, i+1, 5),
+            payee="First Spunky Bank",
+            memo="Mortgage",
+            split_accs={
+                "Mortgage": 650.23,
+                "Interest/Fees": "balance",
+                "Savings": -967.23,
+            },
+        )
 
 
 def create_random_automotive(client):
-    pass
+    jan1 = anchor_jan1()
 
+    # gas expense
+    offsets = random.sample(list(range(365)), 20)
+    for i in offsets:
+        _trans(
+            client,
+            date=jan1+datetime.timedelta(days=i),
+            payee=random.choice(['Exxon', 'WaWa', 'BP']),
+            memo="Gas",
+            split_accs={
+                "Transportation": round(random.gammavariate(25, 5), 2),
+                "Visa": "balance",
+            },
+        )
+
+    # repairs expense
+    offsets = random.sample(list(range(365)), 8)
+    for i in offsets:
+        _trans(
+            client,
+            date=jan1+datetime.timedelta(days=i),
+            payee="Joe's Garage",
+            memo="Repaired Car",
+            split_accs={
+                "Transportation": round(random.gammavariate(85, 15), 2),
+                "Visa": "balance",
+            },
+        )
+
+    _print_balance_sheet(client)
+    _print_p_and_l(client)
 
 def outer(f):
     creds = {"username": "fred cfo", "password": "pigeon"}
