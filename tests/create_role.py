@@ -1,4 +1,3 @@
-import os
 import re
 import tools
 import mecolm
@@ -47,7 +46,7 @@ def create_role(client, rolename, endpoints):
     payload = client.get(f"/api/role/{row.id}")
     roletab = payload.main_table()
     print(f"User: {roletab.rows[0].role_name}")
-    payload = client.get(f"/api/activities/by-role", role=row.id)
+    payload = client.get("/api/activities/by-role", role=row.id)
     for activity in payload.main_table().rows:
         print(activity)
 
