@@ -345,6 +345,20 @@ class RtxClient:
     def view_help(self, tail):
         os.startfile(self.session.prefix("docs/" + tail))
 
+    @classmethod
+    def _get_files(cls, kwargs):
+        files = kwargs.pop("files", None)
+
+        if "tables" in kwargs:
+            files = files or {}
+            tables = kwargs.pop("tables")
+            for k, t in tables.items():
+                if k in files:
+                    raise RuntimeError(f"{k} is used in tables and files; refused")
+                files[k] = t.as_http_post_file()
+
+        return files
+
     def future_invocation(self):
         future = RequestFuture(self.session)
         invoke = lambda *args, **kwargs: future.get(self, *args, **kwargs)
@@ -374,14 +388,10 @@ class RtxClient:
 
     def post(self, tail, *args, **kwargs):
         tail = tail.format(*args)
-        if "files" in kwargs:
-            files = kwargs.pop("files")
-        else:
-            files = None
-        if "data" in kwargs:
-            data = kwargs.pop("data")
-        else:
-            data = None
+
+        files = self._get_files(kwargs)
+        data = kwargs.pop("data", None)
+
         s = self.session
         s.refresh_token()
         r = s.post(
@@ -402,14 +412,10 @@ class RtxClient:
 
     def put(self, tail, *args, **kwargs):
         tail = tail.format(*args)
-        if "files" in kwargs:
-            files = kwargs.pop("files")
-        else:
-            files = None
-        if "data" in kwargs:
-            data = kwargs.pop("data")
-        else:
-            data = None
+
+        files = self._get_files(kwargs)
+        data = kwargs.pop("data", None)
+
         s = self.session
         s.refresh_token()
         r = s.put(
@@ -430,10 +436,9 @@ class RtxClient:
 
     def delete(self, tail, *args, **kwargs):
         tail = tail.format(*args)
-        if "files" in kwargs:
-            files = kwargs.pop("files")
-        else:
-            files = None
+
+        files = self._get_files(kwargs)
+
         s = self.session
         s.refresh_token()
         r = s.delete(s.prefix(tail), params=kwargs, files=files, allow_redirects=True)

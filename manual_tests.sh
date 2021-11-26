@@ -7,6 +7,7 @@ docker-compose exec tests python /tests/integration_tests.py createuser --name="
 # do some accounting
 docker-compose exec tests python /tests/integration_tests.py trans.create_account_types
 docker-compose exec tests python /tests/integration_tests.py trans.create_accounts
+docker-compose exec tests python /tests/integration_tests.py trans.create_initial_balances
 
 # do some contacts
 docker-compose exec tests python /tests/integration_tests.py contacts.create_corp_entity
