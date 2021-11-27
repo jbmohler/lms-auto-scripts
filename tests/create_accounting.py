@@ -199,7 +199,7 @@ def create_weekly_groceries(client):
             payee=random.choice(['Giant', 'Aldi']),
             memo="Groceries",
             split_accs={
-                "Groceries": round(random.gammavariate(120, 60), 2),
+                "Groceries": round(random.gammavariate(10, 12), 2),
                 "Visa": "balance",
             },
         )
@@ -234,7 +234,7 @@ def create_random_automotive(client):
             payee=random.choice(['Exxon', 'WaWa', 'BP']),
             memo="Gas",
             split_accs={
-                "Transportation": round(random.gammavariate(25, 5), 2),
+                "Transportation": round(random.gammavariate(6, 6), 2),
                 "Visa": "balance",
             },
         )
@@ -248,7 +248,7 @@ def create_random_automotive(client):
             payee="Joe's Garage",
             memo="Repaired Car",
             split_accs={
-                "Transportation": round(random.gammavariate(85, 15), 2),
+                "Transportation": round(random.gammavariate(6, 20), 2),
                 "Visa": "balance",
             },
         )
