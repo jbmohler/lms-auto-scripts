@@ -16,9 +16,11 @@ services:
             - LMS_CONTACTS_KEY2=ErktGlCsg1k2od-KN8jtt7sikYQc36FuIoCrAsKuDsY=
             - LMS_CONTACTS_KEY3=4OpiE_bfMlewpzKsCik7AmYeaNgJJ6pXVHwbdLbEgco=
             - YENOT_DEBUG=debug
+            - YENOT_2FA_DIR=/temp2fa
         volumes:
             - ./yenot:/lms/yenot
             - ./yenot-auth:/lms/yenot-auth
+            - ./temp2fa:/temp2fa
     db:
         build: postgresql
         image: pg-lms-demo
@@ -32,5 +34,7 @@ services:
             - INIT_ADMIN_USER=admin
             - INIT_ADMIN_PASSWORD=zyx987
             - LMS_URL=http://web:8088
+            - YENOT_2FA_DIR=/temp2fa
         volumes:
             - ./tests:/tests
+            - ./temp2fa:/temp2fa

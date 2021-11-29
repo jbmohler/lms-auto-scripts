@@ -3,6 +3,10 @@ docker-compose exec tests python /tests/integration_tests.py createrole --rolena
 docker-compose exec tests python /tests/integration_tests.py createrole --rolename="Accounting Mgmt"
 docker-compose exec tests python /tests/integration_tests.py createuser --name="Fred CFO" --roles="Accounting Mgmt"
 docker-compose exec tests python /tests/integration_tests.py createuser --name="George Sales" --roles="Contact Mgmt"
+docker-compose exec tests python /tests/integration_tests.py createuser --name="User2 X" --roles="User" --2fa=file
+
+# do some 2fa and login tests
+docker-compose exec tests python /tests/integration_tests.py login.try_2fa
 
 # do some accounting
 docker-compose exec tests python /tests/integration_tests.py trans.create_account_types
@@ -17,3 +21,5 @@ docker-compose exec tests python /tests/integration_tests.py trans.create_random
 docker-compose exec tests python /tests/integration_tests.py contacts.create_corp_entity
 docker-compose exec tests python /tests/integration_tests.py contacts.create_personal_entity
 docker-compose exec tests python /tests/integration_tests.py contacts.add_random_contact_bits
+
+# TODO -- do some load testing

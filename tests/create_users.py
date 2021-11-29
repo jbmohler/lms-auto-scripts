@@ -13,6 +13,8 @@ def create_user(client, username, roles):
         user = usertab.rows[0]
         user.username = username
         user.password = "pigeon"
+        user.pin = "1928"
+        user.target_2fa = {"file": None}
 
         client.put(f"/api/user/{user.id}", files={"user": usertab.as_http_post_file()})
     else:

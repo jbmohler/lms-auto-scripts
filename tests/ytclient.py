@@ -34,7 +34,7 @@ Method:  {1}""".format(
 
 
 def raise_exception_ex(request, method):
-    if request.status_code == 403:
+    if request.status_code in (400, 403):
         t = request.text
         is_json = len(t) > 0 and t[0] == "[" and t[-1] == "]"
         if is_json:
@@ -62,7 +62,7 @@ class RtxSession(requests.Session):
             self.server_url = None
         # self.headers["X-Yenot-Timezone"] = zoneinfo.get_localzone().zone
 
-        self.rtx_sid = None
+        self.yenot_sid = None
         self.access_token = None
         self._recent_reports = []
 
@@ -72,7 +72,7 @@ class RtxSession(requests.Session):
         return self.server_url is not None
 
     def authenticated(self):
-        return self.rtx_sid is not None
+        return self.yenot_sid is not None
 
     def set_base_url(self, server_url):
         self.server_url = server_url
@@ -145,20 +145,17 @@ class RtxSession(requests.Session):
             raise RtxServerError(
                 f"The login server {self.server_url} was slow responding."
             )
-        if r.status_code not in (200, 210):
-            raise RtxServerError(
-                f"Login response failed from server {self.server_url}.\n\n{exception_string(r, 'POST')}"
-            )
-        elif r.status_code == 210:
+        if r.status_code != 200:
+            raise raise_exception_ex(r, "POST")
             raise RtxError("Invalid user name or password.  Check your caps lock.")
 
         payload = json.loads(r.text)
 
         # success
-        self.rtx_sid = payload["session"]
+        self.yenot_sid = payload["session"]
         self.access_token = payload["access_token"]
         self.headers["Authorization"] = f"Bearer {self.access_token}"
-        return self.rtx_sid
+        return self.yenot_sid
 
     def authenticate_pin2(self, pin2):
         p = {"pin2": pin2}
@@ -170,18 +167,15 @@ class RtxSession(requests.Session):
             raise RtxServerError(
                 f"The login server {self.server_url} was slow responding."
             )
-        if r.status_code not in (200, 210):
-            raise RtxServerError(
-                f"Login response failed from server {self.server_url}.\n\n{exception_string(r, 'POST')}"
-            )
-        elif r.status_code == 210:
+        if r.status_code != 200:
+            raise raise_exception_ex(r, "POST")
             raise RtxError("Invalid user name or password.  Check your caps lock.")
 
         payload = json.loads(r.text)
 
         self.rtx_username = payload["username"]
         self._capabilities = mecolm.ClientTable(*payload["capabilities"])
-        self.rtx_sid = payload["session"]
+        self.yenot_sid = payload["session"]
         self.access_token = payload["access_token"]
         self.headers["Authorization"] = f"Bearer {self.access_token}"
         return True
@@ -200,18 +194,15 @@ class RtxSession(requests.Session):
             raise RtxServerError(
                 f"The login server {self.server_url} was slow responding."
             )
-        if r.status_code not in (200, 210):
-            raise RtxServerError(
-                f"Login response failed from server {self.server_url}.\n\n{exception_string(r, 'POST')}"
-            )
-        elif r.status_code == 210:
+        if r.status_code != 200:
+            raise raise_exception_ex(r, "POST")
             raise RtxError("Invalid user name or password.  Check your caps lock.")
 
         payload = json.loads(r.text)
 
         # success
         self._capabilities = mecolm.ClientTable(*payload["capabilities"])
-        self.rtx_sid = payload["session"]
+        self.yenot_sid = payload["session"]
         self.rtx_userid = payload["userid"]
         self.rtx_username = payload["username"]
         self.access_token = payload["access_token"]
@@ -225,11 +216,10 @@ class RtxSession(requests.Session):
             read_yenotpass(self)
 
     def close(self):
-        if self.rtx_sid != None:
+        if self.yenot_sid != None:
             r = self.put(self.prefix("api/session/logout"))
             if r.status_code != 200:
                 raise raise_exception_ex(r, "PUT")
-                raise RtxServerError("")
 
         super(RtxSession, self).close()
 

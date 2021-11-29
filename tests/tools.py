@@ -9,18 +9,35 @@ LMS_URL = os.getenv("LMS_URL")
 
 
 @contextlib.contextmanager
-def lms_std_client(creds=None):
+def lms_session(creds=None):
+    """
+    :param creds: any of the following
+     - dict with username & password keys
+     - (default) None -- gets username & password from environment
+     - empty dict -- does not authenticate
+    """
+
     if creds is None:
         # default to admin from the environment
         creds = {"username": INIT_ADMIN_USER, "password": INIT_ADMIN_PASSWORD}
 
     session = ytclient.RtxSession(LMS_URL)
-    session.authenticate(creds["username"], creds["password"])
+    if len(creds):
+        session.authenticate(creds["username"], creds["password"])
 
     try:
-        yield session.std_client()
+        yield session
     finally:
         session.close()
+
+
+@contextlib.contextmanager
+def lms_std_client(creds=None):
+    """
+    :param creds:  as in lms_session
+    """
+    with lms_session(creds) as session:
+        yield session.std_client()
 
 
 def attr_2_label(attr, method):

@@ -71,7 +71,9 @@ if __name__ == "__main__":
     c = subparsers.add_parser("createuser")
     c.add_argument("--name", "-n")
     c.add_argument("--roles", "-r", help="comma delimited role name list")
+    c.add_argument("--2fa", dest="x2fa", help="2FA type")
 
+    c = subparsers.add_parser("login.try_2fa")
     c = subparsers.add_parser("trans.create_account_types")
     c = subparsers.add_parser("trans.create_accounts")
     c = subparsers.add_parser("trans.create_initial_balances")
@@ -99,6 +101,10 @@ if __name__ == "__main__":
         import create_users
 
         create_users.outer(args.name, args.roles.split(","))
+    elif args.command.startswith("login."):
+        import login_tests
+
+        login_tests.outer(getattr(login_tests, args.command[len("login.") :]))
     elif args.command.startswith("trans."):
         import create_accounting
 
