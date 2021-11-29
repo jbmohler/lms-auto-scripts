@@ -56,7 +56,12 @@ def outer(rolename):
     if rolename == "Contact Mgmt":
         matches = ["api/persona.*"]
     if rolename == "Accounting Mgmt":
-        matches = ["api/account.*", "api/journal.*", "api/transaction.*", "api/gledger.*"]
+        matches = [
+            "api/account.*",
+            "api/journal.*",
+            "api/transaction.*",
+            "api/gledger.*",
+        ]
 
     with tools.lms_std_client() as client:
         create_role(client, rolename, matches)
