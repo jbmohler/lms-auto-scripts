@@ -20,6 +20,7 @@ services:
         volumes:
             - ./yenot:/lms/yenot
             - ./yenot-auth:/lms/yenot-auth
+            - ./yenot-html:/lms/yenot-html
             - ./temp2fa:/temp2fa
     db:
         build: postgresql

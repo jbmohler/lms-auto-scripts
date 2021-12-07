@@ -7,6 +7,7 @@ docker-compose exec tests python /tests/integration_tests.py createuser --name="
 
 # do some 2fa and login tests
 docker-compose exec tests python /tests/integration_tests.py login.try_2fa
+docker-compose exec tests python /tests/integration_tests.py login.sleep
 
 # do some accounting
 docker-compose exec tests python /tests/integration_tests.py trans.create_account_types
@@ -23,3 +24,10 @@ docker-compose exec tests python /tests/integration_tests.py contacts.create_per
 docker-compose exec tests python /tests/integration_tests.py contacts.add_random_contact_bits
 
 # TODO -- do some load testing
+
+
+# NOTES
+#
+# - each handler should require a "request" parameter
+# - app decorators (get, put, post, patch, delete)
+# - consider custom protocol in sanic

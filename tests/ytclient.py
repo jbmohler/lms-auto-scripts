@@ -62,7 +62,6 @@ class RtxSession(requests.Session):
             self.server_url = None
         # self.headers["X-Yenot-Timezone"] = zoneinfo.get_localzone().zone
 
-        self.yenot_sid = None
         self.access_token = None
         self._recent_reports = []
 
@@ -72,7 +71,13 @@ class RtxSession(requests.Session):
         return self.server_url is not None
 
     def authenticated(self):
-        return self.yenot_sid is not None
+        return self.access_token is not None
+
+    @property
+    def yenot_sid(self):
+        token = self.cookies["YenotToken"]
+        claims = jose.jwt.get_unverified_claims(token)
+        return claims["yenot-session-id"]
 
     def set_base_url(self, server_url):
         self.server_url = server_url
@@ -152,10 +157,9 @@ class RtxSession(requests.Session):
         payload = json.loads(r.text)
 
         # success
-        self.yenot_sid = payload["session"]
-        self.access_token = payload["access_token"]
-        self.headers["Authorization"] = f"Bearer {self.access_token}"
-        return self.yenot_sid
+        # self.access_token = payload["access_token"]
+        # self.headers["Authorization"] = f"Bearer {self.access_token}"
+        return True
 
     def authenticate_pin2(self, pin2):
         p = {"pin2": pin2}
@@ -175,9 +179,8 @@ class RtxSession(requests.Session):
 
         self.rtx_username = payload["username"]
         self._capabilities = mecolm.ClientTable(*payload["capabilities"])
-        self.yenot_sid = payload["session"]
-        self.access_token = payload["access_token"]
-        self.headers["Authorization"] = f"Bearer {self.access_token}"
+        # self.access_token = payload["access_token"]
+        # self.headers["Authorization"] = f"Bearer {self.access_token}"
         return True
 
     def authenticate(self, username, password=None, device_token=None):
@@ -202,21 +205,26 @@ class RtxSession(requests.Session):
 
         # success
         self._capabilities = mecolm.ClientTable(*payload["capabilities"])
-        self.yenot_sid = payload["session"]
         self.rtx_userid = payload["userid"]
         self.rtx_username = payload["username"]
-        self.access_token = payload["access_token"]
-        self.headers["Authorization"] = f"Bearer {self.access_token}"
+        # self.access_token = payload["access_token"]
+        # self.headers["Authorization"] = f"Bearer {self.access_token}"
         return True
 
     def refresh_token(self):
-        claims = jose.jwt.get_unverified_claims(self.access_token)
-        if claims["exp"] <= time.time() - 3:
+        # All the action is in the cookie exchange
+        r = self.get(self.prefix("api/session/refresh"))
+        if r.status_code != 200:
+            raise raise_exception_ex(r, "GET")
+        #if not self.access_token:
+        #    return
+        #claims = jose.jwt.get_unverified_claims(self.access_token)
+        #if claims["exp"] <= time.time() - 3:
             # this is with-in 3 seconds of expiration
-            read_yenotpass(self)
+        #    read_yenotpass(self)
 
     def close(self):
-        if self.yenot_sid != None:
+        if self.access_token != None:
             r = self.put(self.prefix("api/session/logout"))
             if r.status_code != 200:
                 raise raise_exception_ex(r, "PUT")

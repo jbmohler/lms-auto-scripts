@@ -74,6 +74,7 @@ if __name__ == "__main__":
     c.add_argument("--2fa", dest="x2fa", help="2FA type")
 
     c = subparsers.add_parser("login.try_2fa")
+    c = subparsers.add_parser("login.sleep")
     c = subparsers.add_parser("trans.create_account_types")
     c = subparsers.add_parser("trans.create_accounts")
     c = subparsers.add_parser("trans.create_initial_balances")

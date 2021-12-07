@@ -25,6 +25,11 @@ def try_2fa():
             raise
 
 
+def sleep():
+    with tools.lms_session(creds={}) as session:
+        session.std_client().get("/api/request/sleep", duration=3)
+
+
 def outer(f):
     f()
     # creds = {"username": "fred cfo", "password": "pigeon"}
