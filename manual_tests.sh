@@ -1,3 +1,5 @@
+set -e
+
 docker-compose exec tests python /tests/integration_tests.py register_activities
 docker-compose exec tests python /tests/integration_tests.py createrole --rolename="Contact Mgmt"
 docker-compose exec tests python /tests/integration_tests.py createrole --rolename="Accounting Mgmt"
@@ -6,6 +8,7 @@ docker-compose exec tests python /tests/integration_tests.py createuser --name="
 docker-compose exec tests python /tests/integration_tests.py createuser --name="User2 X" --roles="User" --2fa=file
 
 # do some 2fa and login tests
+docker-compose exec tests python /tests/integration_tests.py login.login_logout
 docker-compose exec tests python /tests/integration_tests.py login.try_2fa
 docker-compose exec tests python /tests/integration_tests.py login.sleep
 

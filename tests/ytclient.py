@@ -62,6 +62,7 @@ class RtxSession(requests.Session):
             self.server_url = None
         # self.headers["X-Yenot-Timezone"] = zoneinfo.get_localzone().zone
 
+        self.access_token_expiration = None
         self.access_token = None
         self._recent_reports = []
 
@@ -179,6 +180,8 @@ class RtxSession(requests.Session):
 
         self.rtx_username = payload["username"]
         self._capabilities = mecolm.ClientTable(*payload["capabilities"])
+        self.access_token = True
+        self.access_token_expiration = time.time() + 60 * 60
         # self.access_token = payload["access_token"]
         # self.headers["Authorization"] = f"Bearer {self.access_token}"
         return True
@@ -204,30 +207,37 @@ class RtxSession(requests.Session):
         payload = json.loads(r.text)
 
         # success
-        self._capabilities = mecolm.ClientTable(*payload["capabilities"])
         self.rtx_userid = payload["userid"]
         self.rtx_username = payload["username"]
+        self._capabilities = mecolm.ClientTable(*payload["capabilities"])
+        self.access_token = True
+        self.access_token_expiration = time.time() + 60 * 60
         # self.access_token = payload["access_token"]
         # self.headers["Authorization"] = f"Bearer {self.access_token}"
         return True
 
     def refresh_token(self):
-        # All the action is in the cookie exchange
-        r = self.get(self.prefix("api/session/refresh"))
-        if r.status_code != 200:
-            raise raise_exception_ex(r, "GET")
-        #if not self.access_token:
-        #    return
-        #claims = jose.jwt.get_unverified_claims(self.access_token)
-        #if claims["exp"] <= time.time() - 3:
-            # this is with-in 3 seconds of expiration
-        #    read_yenotpass(self)
+        if not self.access_token_expiration:
+            return
 
-    def close(self):
+        # All the action is in the cookie exchange
+        if time.time() + 10 * 60 >= self.access_token_expiration:
+            r = self.get(self.prefix("api/session/refresh"))
+            if r.status_code != 200:
+                raise raise_exception_ex(r, "GET")
+
+    def logout(self):
         if self.access_token != None:
             r = self.put(self.prefix("api/session/logout"))
             if r.status_code != 200:
                 raise raise_exception_ex(r, "PUT")
+
+            # manually clear this
+            self.access_token = None
+            self.access_token_expiration = None
+
+    def close(self):
+        self.logout()
 
         super(RtxSession, self).close()
 
