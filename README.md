@@ -3,7 +3,7 @@
 Docker compose scripts for full lms Data Suite.
 
 This is not a mono-repo which makes this just a wrapper repo for the actual
-sub-projects.  See `clone-subs.sh`.
+sub-projects.  See `git-clone-subs.sh` and `git-status-subs.sh`.
 
 The docker compose configuration in the root starts 3 docker containers:
 
@@ -19,10 +19,11 @@ template for production usage.
 # Usage
 
 ```console
-$ sh clone-subs.sh
+$ sh git-clone-subs.sh
 ... various git clones of yenot-x ...
-$ sh build-docker.sh
+$ bash build-docker.sh
 ... builds a docker image based on the yenot-x clones ...
+$ docker rm lms-auto-scripts_db_1 && docker-compose up
 $ docker-compose up --detach
 $ sh manual_tests.sh
 ... test output ...
