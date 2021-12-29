@@ -20,12 +20,18 @@ def login_logout():
 
         session.authenticate(INIT_ADMIN_USER, INIT_ADMIN_PASSWORD)
 
-        try:
-            payload = session.std_client().get("api/user/me")
-            username = payload.main_table().rows[0].username
-            print(f"Authenticated; got payload for user {username}")
-        except tools.ytclient.RtxError as e:
-            print(f"Did not get user payload; bad ({str(e)})")
+        for _ in range(3):
+            try:
+                payload = session.std_client().get("api/user/me")
+                username = payload.main_table().rows[0].username
+                sesslist = payload.named_table("sessions").rows
+                sesslist.sort(key=lambda x: (1 if x.inactive else 2, x.issued))
+                for row in sesslist:
+                    print(f"\t{row.inactive}\t{row.id[9:13]} {row.ipaddress} {row.issued:%x %X} {row.expires:%x %X}")
+                print(f"Authenticated; got payload for user {username}")
+            except tools.ytclient.RtxError as e:
+                print(f"Did not get user payload; bad ({str(e)})")
+            import time; time.sleep(1)
 
         session.logout()
 

@@ -6,6 +6,7 @@ docker-compose exec tests python /tests/integration_tests.py createrole --rolena
 docker-compose exec tests python /tests/integration_tests.py createuser --name="Fred CFO" --roles="Accounting Mgmt"
 docker-compose exec tests python /tests/integration_tests.py createuser --name="George Sales" --roles="Contact Mgmt"
 docker-compose exec tests python /tests/integration_tests.py createuser --name="User2 X" --roles="User" --2fa=file
+docker-compose exec tests python /tests/integration_tests.py createuser --name="M Owner" --roles="User,Accounting Mgmt,Contact Mgmt" --2fa=file
 
 # do some 2fa and login tests
 docker-compose exec tests python /tests/integration_tests.py login.login_logout

@@ -6,15 +6,14 @@ services:
             - "8080:8088"
         environment:
             - PYTHONUNBUFFERED=1
-            - PG_INIT_DB=postgresql://postgres:abc123@db/postgres
-            - LMS_ADMIN_DB=postgresql://lmsadmin:very-secret-123@db/lmsdemo
-            - INIT_DB_PASSWORD=zyx987
-            - YENOT_AUTH_SIGNING_SECRET=oi2ho2ntl2nt2l3n2li
+            - xPG_INIT_DB=postgresql://postgres:abc123@db/postgres
+            - xLMS_ADMIN_DB=postgresql://lmsadmin:very-secret-123@db/lmsdemo
+            - xINIT_DB_PASSWORD=zyx987
             - LMS_PROD_DB=postgresql://lmsserver:secret123@db/lmsdemo
+            - YENOT_AUTH_SIGNING_SECRET=oi2ho2ntl2nt2l3n2li
             - LMS_CONTACTS_KEY=AqZE4ijtNb2f21t3gmv_bXwKZUHB6H8v75qKcbxrOe0=
-            - LMS_CONTACTS_KEY1=AqZE4ijtNb2f21t3gmv_bXwKZUHB6H8v75qKcbxrOe0=
-            - LMS_CONTACTS_KEY2=ErktGlCsg1k2od-KN8jtt7sikYQc36FuIoCrAsKuDsY=
-            - LMS_CONTACTS_KEY3=4OpiE_bfMlewpzKsCik7AmYeaNgJJ6pXVHwbdLbEgco=
+            - LMS_CONTACTS_KEY_ROTATE1=4OpiE_bfMlewpzKsCik7AmYeaNgJJ6pXVHwbdLbEgco=
+            - LMS_CONTACTS_KEY_ROTATE2=AqZE4ijtNb2f21t3gmv_bXwKZUHB6H8v75qKcbxrOe0=
             - YENOT_DEBUG=debug
             - YENOT_2FA_DIR=/temp2fa
         volumes:
