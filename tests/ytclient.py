@@ -5,7 +5,7 @@ import uuid
 import datetime
 import socket
 import jose.jwt
-import requests
+import httpx
 import zoneinfo
 import mecolm
 
@@ -53,7 +53,7 @@ class STATIC:
         raise RuntimeError("check server")
 
 
-class RtxSession(requests.Session):
+class RtxSession(httpx.Client):
     def __init__(self, server_url=None):
         super(RtxSession, self).__init__()
         if server_url:
@@ -84,7 +84,7 @@ class RtxSession(requests.Session):
         self.server_url = server_url
         if self.server_url and not self.server_url.endswith("/"):
             self.server_url += "/"
-        self.mount(self.server_url, requests.adapters.HTTPAdapter(max_retries=3))
+        #self.mount(self.server_url, httpx.adapters.HTTPAdapter(max_retries=3))
 
     def save_device_token(self):
         client = self.std_client()
@@ -145,9 +145,9 @@ class RtxSession(requests.Session):
         p = {"username": username, "pin": pin}
         try:
             r = self.post(self.prefix("api/session-by-pin"), data=p)
-        except requests.ConnectionError:
+        except httpx.ConnectionError:
             raise RtxServerError(f"The login server {self.server_url} was unavailable.")
-        except requests.Timeout:
+        except httpx.Timeout:
             raise RtxServerError(
                 f"The login server {self.server_url} was slow responding."
             )
@@ -157,18 +157,16 @@ class RtxSession(requests.Session):
 
         payload = json.loads(r.text)
 
-        # success
-        # self.access_token = payload["access_token"]
-        # self.headers["Authorization"] = f"Bearer {self.access_token}"
+        # 2fa prompt pending
         return True
 
     def authenticate_pin2(self, pin2):
         p = {"pin2": pin2}
         try:
             r = self.post(self.prefix("api/session/promote-2fa"), data=p)
-        except requests.ConnectionError:
+        except httpx.ConnectionError:
             raise RtxServerError(f"The login server {self.server_url} was unavailable.")
-        except requests.Timeout:
+        except httpx.Timeout:
             raise RtxServerError(
                 f"The login server {self.server_url} was slow responding."
             )
@@ -194,9 +192,9 @@ class RtxSession(requests.Session):
             p["device_token"] = device_token
         try:
             r = self.post(self.prefix("api/session"), data=p)
-        except requests.ConnectionError:
+        except httpx.ConnectionError:
             raise RtxServerError(f"The login server {self.server_url} was unavailable.")
-        except requests.Timeout:
+        except httpx.Timeout:
             raise RtxServerError(
                 f"The login server {self.server_url} was slow responding."
             )
@@ -206,14 +204,16 @@ class RtxSession(requests.Session):
 
         payload = json.loads(r.text)
 
-        # success
-        self.rtx_userid = payload["userid"]
-        self.rtx_username = payload["username"]
-        self._capabilities = mecolm.ClientTable(*payload["capabilities"])
-        self.access_token = True
-        self.access_token_expiration = time.time() + 60 * 60
-        # self.access_token = payload["access_token"]
-        # self.headers["Authorization"] = f"Bearer {self.access_token}"
+        if payload.get('2fa-prompt', False):
+            # 2fa prompt pending
+            pass
+        else:
+            # success -- authenticated
+            self.rtx_userid = payload["userid"]
+            self.rtx_username = payload["username"]
+            self._capabilities = mecolm.ClientTable(*payload["capabilities"])
+            self.access_token = True
+            self.access_token_expiration = time.time() + 60 * 60
         return True
 
     def refresh_token(self):
@@ -335,7 +335,7 @@ class RtxClient:
     "appropriate" has not been clearly defined nor implemented).
 
     The star of this class is get which sends a REST request to the specified
-    rtx server via the Python requests library.  It notifies the user of errors
+    rtx server via the Python httpx library.  It notifies the user of errors
     by message box or exception as appropriate and configured by a callback
     (?).  If no error occurs the response is parsed by json.loads and returned
     with-out further parsing.  Note that you should expect requests to
@@ -363,7 +363,8 @@ class RtxClient:
             for k, t in tables.items():
                 if k in files:
                     raise RuntimeError(f"{k} is used in tables and files; refused")
-                files[k] = t.as_http_post_file()
+                persistence=getattr(t, 'std_persistence', {})
+                files[k] = t.as_http_post_file(**persistence)
 
         return files
 
@@ -380,7 +381,7 @@ class RtxClient:
             headers["X-Yenot-CancelToken"] = kwargs["cancel_token"]
             del kwargs["cancel_token"]
         s.refresh_token()
-        r = s.get(s.prefix(tail), params=kwargs, headers=headers, allow_redirects=True)
+        r = s.get(s.prefix(tail), params=kwargs, headers=headers, follow_redirects=True)
         # This is special rtx queued long job handling logic
         while r.status_code in [202, 303]:  # accepted, redirect
             queued = r.headers["Location"]
@@ -389,7 +390,7 @@ class RtxClient:
                 if sleeptime > 2.0:
                     sleeptime /= 1.5
                 time.sleep(sleeptime)
-            r = s.get(queued, allow_redirects=True)
+            r = s.get(queued, follow_redirects=True)
         if r.status_code != 200:
             raise raise_exception_ex(r, "GET")
         return self.result_factory(r.text)
@@ -403,7 +404,7 @@ class RtxClient:
         s = self.session
         s.refresh_token()
         r = s.post(
-            s.prefix(tail), params=kwargs, data=data, files=files, allow_redirects=True
+            s.prefix(tail), params=kwargs, data=data, files=files, follow_redirects=True
         )
         # This is special rtx queued long job handling logic
         while r.status_code in [202, 303]:  # accepted, redirect
@@ -413,7 +414,7 @@ class RtxClient:
                 if sleeptime > 2.0:
                     sleeptime /= 1.5
                 time.sleep(sleeptime)
-            r = s.get(queued, allow_redirects=True)
+            r = s.get(queued, follow_redirects=True)
         if r.status_code != 200:
             raise raise_exception_ex(r, "POST")
         return self.result_factory(r.text)
@@ -427,7 +428,7 @@ class RtxClient:
         s = self.session
         s.refresh_token()
         r = s.put(
-            s.prefix(tail), params=kwargs, data=data, files=files, allow_redirects=True
+            s.prefix(tail), params=kwargs, data=data, files=files, follow_redirects=True
         )
         # This is special rtx queued long job handling logic
         while r.status_code in [202, 303]:  # accepted, redirect
@@ -437,7 +438,7 @@ class RtxClient:
                 if sleeptime > 2.0:
                     sleeptime /= 1.5
                 time.sleep(sleeptime)
-            r = s.get(queued, allow_redirects=True)
+            r = s.get(queued, follow_redirects=True)
         if r.status_code != 200:
             raise raise_exception_ex(r, "PUT")
         return self.result_factory(r.text)
@@ -449,7 +450,7 @@ class RtxClient:
 
         s = self.session
         s.refresh_token()
-        r = s.delete(s.prefix(tail), params=kwargs, files=files, allow_redirects=True)
+        r = s.delete(s.prefix(tail), params=kwargs, files=files, follow_redirects=True)
         # This is special rtx queued long job handling logic
         while r.status_code in [202, 303]:  # accepted, redirect
             queued = r.headers["Location"]
@@ -458,7 +459,7 @@ class RtxClient:
                 if sleeptime > 2.0:
                     sleeptime /= 1.5
                 time.sleep(sleeptime)
-            r = s.get(queued, allow_redirects=True)
+            r = s.get(queued, follow_redirects=True)
         if r.status_code != 200:
             raise raise_exception_ex(r, "DELETE")
         return self.result_factory(r.text)
@@ -486,8 +487,11 @@ class StdPayload:
             if self._pay[tname] != None and len(self._pay[tname]) == 2:
                 yield tname, self.named_table(tname)
 
-    def named_table(self, name, mixin=None):
-        return mecolm.ClientTable(*self._pay[name], mixin=mixin)
+    def named_table(self, name, mixin=None, persistence=None):
+        table = mecolm.ClientTable(*self._pay[name], mixin=mixin)
+        if persistence:
+            table.std_persistence = persistence
+        return table
 
     def main_table(self, mixin=None):
         mn = self._pay["__main_table__"]

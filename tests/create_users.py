@@ -14,7 +14,8 @@ def create_user(client, username, roles):
         user.username = username
         user.password = "pigeon"
         user.pin = "1928"
-        user.target_2fa = {"file": None}
+        # The target_2fa dict is ignored in test mode
+        user.target_2fa = {"fake": "no-where"}
 
         client.put(f"/api/user/{user.id}", files={"user": usertab.as_http_post_file()})
     else:

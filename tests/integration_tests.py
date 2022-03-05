@@ -3,7 +3,7 @@ import argparse
 import json
 import time
 import contextlib
-import requests
+import httpx
 
 URL = os.getenv("LMS_URL")
 
@@ -11,7 +11,7 @@ URL = os.getenv("LMS_URL")
 def wait_healthy():
     while True:
         try:
-            response = requests.get(f"{URL}/api/ping")
+            response = httpx.get(f"{URL}/api/ping")
             if response.status_code == 200:
                 break
         except Exception as e:
@@ -21,7 +21,7 @@ def wait_healthy():
 
 @contextlib.contextmanager
 def lms_client_session():
-    session = requests.Session()
+    session = httpx.Client()
 
     try:
         r = session.post(
@@ -75,6 +75,7 @@ if __name__ == "__main__":
 
     c = subparsers.add_parser("login.login_logout")
     c = subparsers.add_parser("login.try_2fa")
+    c = subparsers.add_parser("login.activate_2fa")
     c = subparsers.add_parser("login.sleep")
     c = subparsers.add_parser("trans.create_account_types")
     c = subparsers.add_parser("trans.create_accounts")

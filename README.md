@@ -37,13 +37,9 @@ $ sh git-clone-subs.sh
 $ bash build-docker.sh
 ... builds a docker image based on the yenot-x clones ...
 $ docker rm lms-auto-scripts_db_1 && docker-compose up
-$ docker-compose exec \
-			-e PG_INIT_DB=postgresql://postgres:abc123@db/postgres \
-			-e LMS_ADMIN_DB=postgresql://lmsadmin:very-secret-123@db/lmsdemo \
-			-e INIT_DB_PASSWORD=zyx987 \
-			web bash /lms/init-database.sh
+$ docker-compose exec -e PG_INIT_DB=postgresql://postgres:abc123@db/postgres -e LMS_ADMIN_DB=postgresql://lmsadmin:very-secret-123@db/lmsdemo -e INIT_DB_PASSWORD=zyx987 web bash /lms/init-database.sh
 ... creates a new DB & populates schema elements & base data ...
 $ docker-compose up --detach
-$ sh manual_tests.sh
+$ bash manual_tests.sh
 ... test output ...
 ```

@@ -1,4 +1,14 @@
-set -e
+#!/bin/bash
+
+set -ex
+
+if [ x"$1" == "xinit" ]; then
+	docker-compose exec \
+		-e PG_INIT_DB=postgresql://postgres:abc123@db/postgres \
+		-e LMS_ADMIN_DB=postgresql://lmsadmin:very-secret-123@db/lmsdemo \
+		-e INIT_DB_PASSWORD=zyx987 \
+		web bash /lms/init-database.sh
+fi
 
 docker-compose exec tests python /tests/integration_tests.py register_activities
 docker-compose exec tests python /tests/integration_tests.py createrole --rolename="Contact Mgmt"
@@ -10,7 +20,8 @@ docker-compose exec tests python /tests/integration_tests.py createuser --name="
 
 # do some 2fa and login tests
 docker-compose exec tests python /tests/integration_tests.py login.login_logout
-docker-compose exec tests python /tests/integration_tests.py login.try_2fa
+#docker-compose exec tests python /tests/integration_tests.py login.activate_2fa
+#docker-compose exec tests python /tests/integration_tests.py login.try_2fa
 docker-compose exec tests python /tests/integration_tests.py login.sleep
 
 # do some accounting
@@ -21,7 +32,7 @@ docker-compose exec tests python /tests/integration_tests.py trans.create_biweek
 docker-compose exec tests python /tests/integration_tests.py trans.create_weekly_groceries
 docker-compose exec tests python /tests/integration_tests.py trans.create_monthly_mortgage
 docker-compose exec tests python /tests/integration_tests.py trans.create_random_automotive
-
+#
 # do some contacts
 docker-compose exec tests python /tests/integration_tests.py contacts.create_corp_entity
 docker-compose exec tests python /tests/integration_tests.py contacts.create_personal_entity

@@ -78,7 +78,7 @@ def create_accounts(client):
 def _trans(client, date, payee=None, memo=None, ref=None, split_accs=None):
     payload = client.get("/api/transaction/new")
     trans = payload.named_table("trans")
-    splits = payload.named_table("splits")
+    splits = payload.named_table("splits", persistence={"exclusions": ["tags"]})
 
     tranrow = trans.rows[0]
     tranrow.trandate = date
@@ -103,6 +103,8 @@ def _trans(client, date, payee=None, memo=None, ref=None, split_accs=None):
     client.put(
         f"/api/transaction/{tranrow.tid}", tables={"trans": trans, "splits": splits}
     )
+
+    return tranrow.tid
 
 
 def _print_balance_sheet(client):
@@ -139,7 +141,7 @@ def _print_p_and_l(client):
 
 def anchor_jan1():
     today = datetime.date.today()
-    return datetime.date(today.year - 1, 1, 1)
+    return datetime.date(today.year, 1, 1)
 
 
 def create_initial_balances(client):
@@ -179,17 +181,53 @@ def create_biweekly_paycheck(client):
     # arbitrarily choose Jan 5
     first = jan1 + datetime.timedelta(days=4)
 
-    # bank balances
-    for i in range(26):
-        _trans(
-            client,
-            date=first + datetime.timedelta(days=i * 14),
-            memo="Paycheck",
-            split_accs={
-                "Salary Wages": -3500,
-                "Taxes": 454.23,
-                "Savings": "balance",
-            },
+    # Create first paycheck
+    splits = {"Salary Wages": -3500, "Taxes": 454.23, "Savings": "balance"}
+    tid = _trans(client, date=first, memo="Paycheck", split_accs=splits)
+
+    # mark this tagged
+    payload = client.get(f"api/transaction/{tid}")
+
+    trans = payload.named_table("trans")
+    tranrow = trans.rows[0]
+    tranrow.trandate = first
+
+    splits = payload.named_table("splits")
+
+    tags = payload.named_table("tags")
+    reconciled = [t.id for t in tags.rows if t.tag_name == "Bank Reconciled"][0]
+
+    for srow in splits.rows:
+        if srow.acc_name == "Savings":
+            srow.tags.toggle(reconciled, True)
+
+    client.put(
+        f"/api/transaction/{tranrow.tid}", tables={"trans": trans, "splits": splits}
+    )
+
+    # Re-read & check the tag
+    payload = client.get(f"api/transaction/{tid}")
+    splits = payload.named_table("splits")
+
+    for srow in splits.rows:
+        if srow.acc_name == "Savings":
+            assert reconciled in srow.tags
+
+    # create 25 more bi-weekly paychecks
+    for i in range(1, 26):
+        payload = client.get(f"api/transaction/{tid}/copy")
+
+        trans = payload.named_table("trans")
+        tranrow = trans.rows[0]
+        tranrow.trandate = first + datetime.timedelta(days=i * 14)
+
+        splits = payload.named_table("splits")
+        for srow in splits.rows:
+            if srow.acc_name == "Savings":
+                assert reconciled not in srow.tags
+
+        client.put(
+            f"/api/transaction/{tranrow.tid}", tables={"trans": trans, "splits": splits}
         )
 
 
