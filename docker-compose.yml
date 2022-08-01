@@ -1,4 +1,13 @@
 services:
+    admin:
+        build: .
+        image: lms-demo
+        environment:
+            - PYTHONUNBUFFERED=1
+            - PG_INIT_DB=postgresql://postgres:abc123@db/postgres
+            - LMS_ADMIN_DB=postgresql://lmsadmin:very-secret-123@db/lmsdemo
+            - INIT_DB_PASSWORD=zyx987
+            - LMS_PROD_DB=postgresql://lmsserver:secret123@db/lmsdemo
     web:
         build: .
         image: lms-demo
@@ -6,9 +15,6 @@ services:
             - "8080:8088"
         environment:
             - PYTHONUNBUFFERED=1
-            - xPG_INIT_DB=postgresql://postgres:abc123@db/postgres
-            - xLMS_ADMIN_DB=postgresql://lmsadmin:very-secret-123@db/lmsdemo
-            - xINIT_DB_PASSWORD=zyx987
             - LMS_PROD_DB=postgresql://lmsserver:secret123@db/lmsdemo
             - YENOT_AUTH_SIGNING_SECRET=oi2ho2ntl2nt2l3n2li
             - LMS_CONTACTS_KEY=AqZE4ijtNb2f21t3gmv_bXwKZUHB6H8v75qKcbxrOe0=
@@ -19,6 +25,7 @@ services:
         volumes:
             - ./yenot:/lms/yenot
             - ./yenot-auth:/lms/yenot-auth
+            - ./yenot-lmshacc:/lms/yenot-lmshacc
             - ./yenot-html:/lms/yenot-html
             - ./temp2fa:/temp2fa
     db:

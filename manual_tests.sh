@@ -4,10 +4,7 @@ set -ex
 
 if [ x"$1" == "xinit" ]; then
 	docker-compose exec \
-		-e PG_INIT_DB=postgresql://postgres:abc123@db/postgres \
-		-e LMS_ADMIN_DB=postgresql://lmsadmin:very-secret-123@db/lmsdemo \
-		-e INIT_DB_PASSWORD=zyx987 \
-		web bash /lms/init-database.sh
+		admin bash /lms/init-database.sh
 fi
 
 docker-compose exec tests python /tests/integration_tests.py register_activities
@@ -17,6 +14,9 @@ docker-compose exec tests python /tests/integration_tests.py createuser --name="
 docker-compose exec tests python /tests/integration_tests.py createuser --name="George Sales" --roles="Contact Mgmt"
 docker-compose exec tests python /tests/integration_tests.py createuser --name="User2 X" --roles="User" --2fa=file
 docker-compose exec tests python /tests/integration_tests.py createuser --name="M Owner" --roles="User,Accounting Mgmt,Contact Mgmt" --2fa=file
+
+# create new auditor role
+docker-compose exec tests python /tests/integration_tests.py createrole --rolename="Auditor"
 
 # do some 2fa and login tests
 docker-compose exec tests python /tests/integration_tests.py login.login_logout

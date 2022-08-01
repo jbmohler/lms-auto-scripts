@@ -51,6 +51,33 @@ def create_role(client, rolename, endpoints):
         print(activity)
 
 
+def setup_auditor_role(client, rolename):
+    payload = client.get("/api/roles/list")
+    roles = payload.main_table()
+    payload = client.get("/api/users/list")
+    users = payload.main_table()
+
+    def find(table, column, value):
+        return [row for row in table.rows if getattr(row, column) == value][0]
+
+    accounting = find(roles, "role_name", "Accounting Mgmt")
+    contacts = find(roles, "role_name", "Contact Mgmt")
+    auditor = find(roles, "role_name", rolename)
+    user2 = find(users, "username", "USER2 X")
+
+    payload = client.get("/api/userroles/by-users", users=user2.id)
+    role_matrix = payload.main_table()
+
+    save = role_matrix.duplicate(
+        rows=[row for row in role_matrix.rows if row.role_name == rolename]
+    )
+
+    for row in save.rows:
+        row.users.toggle(user2.id, True)
+
+    client.put("/api/userroles/by-users", users=user2.id, tables={"roles": save})
+
+
 def outer(rolename):
     matches = []
     if rolename == "Contact Mgmt":
@@ -61,10 +88,15 @@ def outer(rolename):
             "api/journal.*",
             "api/transaction.*",
             "api/gledger.*",
+            "api/static_settings",
         ]
 
     with tools.lms_std_client() as client:
         create_role(client, rolename, matches)
+
+        if rolename == "Auditor":
+            # set up user User2 X as auditor and set auditor to have lots of read-only roles
+            setup_auditor_role(client, rolename)
 
 
 def main():
