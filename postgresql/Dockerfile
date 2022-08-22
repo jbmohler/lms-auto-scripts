@@ -1,4 +1,4 @@
-FROM postgres:14
+FROM postgres:14.4
 
 #COPY pgschema.sql /blawg/pgschema.sql
 #COPY aacreate.sql /docker-entrypoint-initdb.d/aacreate.sql

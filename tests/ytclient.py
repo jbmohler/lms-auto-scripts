@@ -84,23 +84,7 @@ class RtxSession(httpx.Client):
         self.server_url = server_url
         if self.server_url and not self.server_url.endswith("/"):
             self.server_url += "/"
-        #self.mount(self.server_url, httpx.adapters.HTTPAdapter(max_retries=3))
-
-    def save_device_token(self):
-        client = self.std_client()
-        content = client.post(
-            "api/user/{}/device-token/new",
-            self.rtx_userid,
-            device_name=f"{socket.gethostname()} (Desktop client)",
-            expdays=int(365.25 * 6),
-        )
-        saved_token = content.main_table().rows[0].token
-
-        update_auth_config(
-            server_url=self.server_url,
-            username=self.rtx_username,
-            device_token=saved_token,
-        )
+        # self.mount(self.server_url, httpx.adapters.HTTPAdapter(max_retries=3))
 
     def prefix(self, tail):
         return self.server_url + tail.lstrip("/")
@@ -145,9 +129,9 @@ class RtxSession(httpx.Client):
         p = {"username": username, "pin": pin}
         try:
             r = self.post(self.prefix("api/session-by-pin"), data=p)
-        except httpx.ConnectionError:
+        except httpx.ConnectError:
             raise RtxServerError(f"The login server {self.server_url} was unavailable.")
-        except httpx.Timeout:
+        except httpx.TimeoutException:
             raise RtxServerError(
                 f"The login server {self.server_url} was slow responding."
             )
@@ -155,18 +139,16 @@ class RtxSession(httpx.Client):
             raise raise_exception_ex(r, "POST")
             raise RtxError("Invalid user name or password.  Check your caps lock.")
 
-        payload = json.loads(r.text)
-
-        # 2fa prompt pending
+        # 2fa prompt pending; cookie in session
         return True
 
     def authenticate_pin2(self, pin2):
         p = {"pin2": pin2}
         try:
             r = self.post(self.prefix("api/session/promote-2fa"), data=p)
-        except httpx.ConnectionError:
+        except httpx.ConnectError:
             raise RtxServerError(f"The login server {self.server_url} was unavailable.")
-        except httpx.Timeout:
+        except httpx.TimeoutException:
             raise RtxServerError(
                 f"The login server {self.server_url} was slow responding."
             )
@@ -174,10 +156,10 @@ class RtxSession(httpx.Client):
             raise raise_exception_ex(r, "POST")
             raise RtxError("Invalid user name or password.  Check your caps lock.")
 
-        payload = json.loads(r.text)
+        payload = StdPayload(json.loads(r.text))
 
-        self.rtx_username = payload["username"]
-        self._capabilities = mecolm.ClientTable(*payload["capabilities"])
+        self.rtx_username = payload.keys["username"]
+        self._capabilities = payload.named_table("capabilities")
         self.access_token = True
         self.access_token_expiration = time.time() + 60 * 60
         # self.access_token = payload["access_token"]
@@ -192,9 +174,9 @@ class RtxSession(httpx.Client):
             p["device_token"] = device_token
         try:
             r = self.post(self.prefix("api/session"), data=p)
-        except httpx.ConnectionError:
+        except httpx.ConnectError:
             raise RtxServerError(f"The login server {self.server_url} was unavailable.")
-        except httpx.Timeout:
+        except httpx.TimeoutException:
             raise RtxServerError(
                 f"The login server {self.server_url} was slow responding."
             )
@@ -202,16 +184,16 @@ class RtxSession(httpx.Client):
             raise raise_exception_ex(r, "POST")
             raise RtxError("Invalid user name or password.  Check your caps lock.")
 
-        payload = json.loads(r.text)
+        payload = StdPayload(json.loads(r.text))
 
-        if payload.get('2fa-prompt', False):
+        if payload.keys.get("2fa-prompt", False):
             # 2fa prompt pending
             pass
         else:
             # success -- authenticated
-            self.rtx_userid = payload["userid"]
-            self.rtx_username = payload["username"]
-            self._capabilities = mecolm.ClientTable(*payload["capabilities"])
+            self.rtx_userid = payload.keys["userid"]
+            self.rtx_username = payload.keys["username"]
+            self._capabilities = payload.named_table("capabilities")
             self.access_token = True
             self.access_token_expiration = time.time() + 60 * 60
         return True
@@ -363,7 +345,7 @@ class RtxClient:
             for k, t in tables.items():
                 if k in files:
                     raise RuntimeError(f"{k} is used in tables and files; refused")
-                persistence=getattr(t, 'std_persistence', {})
+                persistence = getattr(t, "std_persistence", {})
                 files[k] = t.as_http_post_file(**persistence)
 
         return files
@@ -488,7 +470,8 @@ class StdPayload:
                 yield tname, self.named_table(tname)
 
     def named_table(self, name, mixin=None, persistence=None):
-        table = mecolm.ClientTable(*self._pay[name], mixin=mixin)
+        tdict = self._pay[name]
+        table = mecolm.ClientTable(tdict["columns"], tdict["data"], mixin=mixin)
         if persistence:
             table.std_persistence = persistence
         return table

@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/bin/bash
+set -x
 git -C yenot status
 git -C yenot-auth status
 git -C yenot-lmsdatabits status
